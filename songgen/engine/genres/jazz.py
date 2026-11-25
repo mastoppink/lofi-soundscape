@@ -15,7 +15,7 @@ STYLES = {
     "chords": ["comping", "ballad", "stabs", "sustain"],
     "bass": ["walking", "two", "pedal"],
     "drums": ["ride", "brush", "sparse"],
-    "melody": ["head+solo", "head", "solo", "fills"],
+    "melody": ["head+solo", "ai", "head", "solo", "fills"],
     "pad": ["sustain", "swell"],
 }
 

@@ -53,6 +53,7 @@ class SongSpec:
     swing: float | None = None  # 0.5 lurus .. 0.67 triplet; None = otomatis
     lofi: float = 0.0           # 0 bersih .. 1 tape/vinyl
     room: float = 0.5           # ukuran ruang reverb
+    ai_model: str = "medium"    # ukuran model AI untuk layer bergaya "ai": small / medium / large
     layers: list[Layer] = field(default_factory=list)
 
     def to_dict(self) -> dict:

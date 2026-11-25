@@ -1,0 +1,4 @@
+# Opsional: melodi ditulis model AI (python -m songgen render ... --ai)
+# Mac (Apple Silicon) otomatis memakai GPU lewat MPS.
+torch>=2.1
+transformers>=4.40

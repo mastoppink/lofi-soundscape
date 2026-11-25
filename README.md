@@ -46,6 +46,22 @@ python -m songgen render lagu.json --solo bass,drums --preview 30s   # dengar se
 python -m songgen render lagu.json --mute strings --stems stems/     # simpan audio per layer
 ```
 
+### Melodi ditulis AI (opsional)
+
+Melodi bisa ditulis oleh **Anticipatory Music Transformer** (Stanford CRFM, Apache-2.0). Model ini
+"mendengar" piano dan bass yang sudah dibuat, lalu menulis melodi di atasnya. Tema head ditulis
+sekali lalu diulang; solo ditulis bebas. Model diunduh otomatis saat pertama dipakai
+(small ±0,5 GB, medium ±1,4 GB).
+
+```bash
+pip install -r requirements-ai.txt
+python -m songgen render --valence 0.3 --energy 0.4 --ai -o lagu.wav               # model medium
+python -m songgen render --valence 0.3 --energy 0.4 --ai --ai-model small -o lagu.wav
+```
+
+Di file `.json`, layer melodi dengan `"style": "ai"` memakai AI; `reroll` layer itu menghasilkan
+melodi AI yang lain.
+
 Atau buat file lagu dulu tanpa render: `python -m songgen new --valence 0.4 --energy 0.5 -o lagu.json`.
 
 ### Opsi global
@@ -74,7 +90,7 @@ Atau buat file lagu dulu tanpa render: `python -m songgen new --valence 0.4 --en
 | `chords` | `comping`, `ballad`, `stabs`, `sustain` |
 | `bass` | `walking`, `two`, `pedal` |
 | `drums` | `ride`, `brush`, `sparse` |
-| `melody` | `head+solo`, `head` (tema), `solo` (improvisasi), `fills` |
+| `melody` | `head+solo`, `ai` (ditulis model AI), `head` (tema), `solo` (improvisasi), `fills` |
 | `pad` | `sustain`, `swell` |
 
 Field `lib` memilih library rekaman asli (`salamander_piano`, `upright_bass`); kalau kosong,
@@ -111,6 +127,7 @@ songgen/
     roles/           chords, bass, drums, melody, pad
     mixer.py         render per layer + mix
     render.py        pipeline lengkap
+    ai/amt.py        melodi AI (Anticipatory Music Transformer)
     sampler.py       pemutar multi-sampel (velocity layer, round robin, release)
     libraries.py     unduh library instrumen
     sfrender.py, fx.py, ambience.py, video.py

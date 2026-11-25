@@ -125,3 +125,16 @@ def test_render_preview_end_to_end(tmp_path):
     assert out.with_suffix(".json").exists()
     main(["render", str(out.with_suffix(".json")), "--preview", "10s", "--solo", "bass", "-o", str(tmp_path / "b.wav")])
     assert sf.info(str(tmp_path / "b.wav")).duration == pytest.approx(10, abs=0.5)
+
+
+def test_ai_tidy_monophonic_and_snapped():
+    from songgen.engine.ai.amt import _tidy
+    from songgen.engine.song import Note
+    arr = jazz.arrange(jazz.default_spec(0.5, 0.5, 200, 1))
+    bs = arr.beat_sec
+    notes = [Note(0.0, 2.0, 60, 70), Note(0.01, 1.0, 64, 70), Note(bs * 1.03, 3.0, 62, 70), Note(bs * 2.1, 0.5, 65, 70)]
+    out = _tidy(arr, notes)
+    assert [n.key for n in out] == [64, 62, 65]          # nada bersamaan -> ambil yang tertinggi
+    for a, b in zip(out, out[1:]):
+        assert a.start + a.dur <= b.start                  # tidak bertumpuk
+    assert abs(out[1].start - bs) < abs(bs * 1.03 - bs)    # ditarik ke grid

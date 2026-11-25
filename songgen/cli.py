@@ -37,6 +37,11 @@ def _spec_from_args(a):
         v = getattr(a, k, None)
         if v is not None:
             setattr(spec, k, v)
+    if getattr(a, "ai", False):
+        for l in spec.layers:
+            if l.role == "melody":
+                l.style = "ai"
+        spec.ai_model = a.ai_model
     if getattr(a, "spec", None) and a.seed is not None:
         spec.seed = a.seed
     return spec
@@ -120,6 +125,8 @@ def main(argv=None):
         p.add_argument("--mode", choices=["major", "minor"])
         p.add_argument("--swing", type=float)
         p.add_argument("--lofi", type=float, help="0 bersih .. 1 tape/vinyl")
+        p.add_argument("--ai", action="store_true", help="melodi ditulis model AI (butuh torch+transformers)")
+        p.add_argument("--ai-model", default="medium", choices=["small", "medium", "large"])
 
     p = sub.add_parser("new", help="buat file lagu .json dari genre + mood")
     common(p, with_spec=False)

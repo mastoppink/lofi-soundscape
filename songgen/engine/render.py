@@ -46,7 +46,7 @@ def render_song(spec: SongSpec, out: Path, soundfont: Path, max_seconds: float |
     arr = arrange(spec)
     title = title_for(spec)
     log(f"'{title}' — {arr.describe().splitlines()[0]}")
-    notes = compose(spec, arr)
+    notes = compose(spec, arr, log)
     stems = render_stems(spec, arr, notes, soundfont, max_seconds, log)
     if not stems:
         raise SystemExit("Tidak ada layer yang bunyi (semua mati/mute).")

@@ -33,17 +33,47 @@ def layer_seed(spec: SongSpec, layer: Layer) -> int:
 ROLE_FEEL = {"bass": -0.006, "drums": 0.0, "chords": 0.008, "melody": 0.014, "pad": 0.02}
 
 
-def compose(spec: SongSpec, arr: Arrangement) -> dict[str, list[Note]]:
+def compose(spec: SongSpec, arr: Arrangement, log=print) -> dict[str, list[Note]]:
     """Not untuk semua layer aktif. Setiap layer pakai seed sendiri -> bisa diacak ulang terpisah."""
     out = {}
-    for layer in spec.layers:
-        if layer.enabled:
-            notes = generate(arr, layer, random.Random(layer_seed(spec, layer)))
-            off = ROLE_FEEL.get(layer.role, 0.0) * (1.0 if arr.tempo < 140 else 0.5)
+    # layer biasa dulu, lalu melodi AI (yang 'mendengarkan' iringan)
+    order = sorted([l for l in spec.layers if l.enabled], key=lambda l: l.style == "ai")
+    for layer in order:
+        rng = random.Random(layer_seed(spec, layer))
+        if layer.style == "ai":
+            notes = ai_melody(spec, arr, layer, out, rng, log)
+        else:
+            notes = generate(arr, layer, rng)
+        off = ROLE_FEEL.get(layer.role, 0.0) * (1.0 if arr.tempo < 140 else 0.5)
+        if layer.style != "ai":
             for n in notes:
                 n.start = max(0.0, n.start + off)
-            out[layer.id] = notes
+        out[layer.id] = notes
     return out
+
+
+GM_PROGRAM = {"chords": 0, "bass": 32, "pad": 48}
+
+
+def ai_melody(spec, arr, layer, done: dict, rng, log=print) -> list[Note]:
+    """Melodi dari model AI, dikondisikan pada layer akor/bass/pad yang sudah dibuat."""
+    from .ai.amt import compose_melody
+    from .roles import RANGES, active
+    acc = []
+    for l in spec.layers:
+        if l.id in done and l.role in GM_PROGRAM:
+            acc += [(n.start, n.dur, n.key, GM_PROGRAM[l.role]) for n in done[l.id]]
+    lo, hi = RANGES.get(layer.instrument.preset, (60, 86))
+    lo, hi = lo + 12 * layer.octave, hi + 12 * layer.octave
+    notes = compose_melody(arr, acc, lo, hi, lambda sec: active(layer, sec) and sec.kind != "intro", rng,
+                           size=spec.ai_model, log=log)
+    # dinamika: frasa naik = lebih keras, nada panjang sedikit ditekan, sedikit acak
+    center = (lo + hi) / 2
+    for n in notes:
+        sec = arr.section_at_bar(int(n.start / (arr.beat_sec * arr.beats_per_bar)))
+        v = 58 + 22 * sec.intensity + (n.key - center) * 0.7 + (5 if n.dur > arr.beat_sec else 0)
+        n.vel = int(max(30, min(115, v + rng.gauss(0, 5))))
+    return notes
 
 
 def audible(spec: SongSpec) -> list[Layer]:
