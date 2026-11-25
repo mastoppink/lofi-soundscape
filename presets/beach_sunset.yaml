@@ -8,6 +8,7 @@ music:
   swing: 0.58
   mood: 0.8
   energy: 0.6
+  comp: [strum, pick]
 instruments:
   keys:   {preset: 24, level: 1.4}            # Nylon Guitar
   bass:   {preset: 33, level: 0.9}

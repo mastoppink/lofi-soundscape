@@ -1,0 +1,18 @@
+name: Guitar Chill
+description: Gitar listrik clean dipetik (fingerpicking), Rhodes tipis, hujan pelan.
+lofi: 0.55
+vinyl: 0.55
+music_volume: 1.0
+music:
+  bpm: [70, 82]
+  swing: 0.6
+  mood: 0.5
+  energy: 0.45
+  comp: [pick, pick, strum]   # gaya iringan: pick (petik), strum (genjreng), sustain, stab, arp
+instruments:
+  keys:   {preset: 27, level: 1.3}            # Clean Guitar (coba juga 26 Jazz Guitar)
+  bass:   {preset: 33, level: 0.9}
+  drums:  {bank: 128, preset: 40, drums: true, level: 0.6}    # Brush kit
+  melody: {preset: 4, level: 0.35}            # Rhodes
+ambience:
+  rain: 0.35

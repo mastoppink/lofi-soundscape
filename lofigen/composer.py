@@ -77,7 +77,7 @@ def compose(seed: int, opts: dict) -> Song:
     prev_voicing = None
     drum_pat = rng.choice(["boombap", "laid", "halftime"])
     hat_kind = rng.choice([CLHAT, CLHAT, SHAKER, RIDE])
-    comp_style = rng.choice(["sustain", "stab", "arp"])
+    comp_style = rng.choice(opts.get("comp", ["sustain", "stab", "arp"]))
     bar_i = 0
     for name, nbars, k_on, b_on, d_on, m_on in sections:
         for b in range(nbars):
@@ -89,13 +89,32 @@ def compose(seed: int, opts: dict) -> Song:
             last = (name == "outro" and b == nbars - 1)
             # --- keys ---
             if k_on:
-                if comp_style == "sustain" or name in ("intro", "outro") or last:
+                if comp_style == "pick" and not last:
+                    # fingerpicking gitar: pola 8th note, nada terendah di ketukan, sisanya bergantian
+                    order = rng.choice([[0, 2, 1, 3, 0, 2, 1, 3], [0, 1, 2, 3, 2, 1, 0, 2], [0, 2, 3, 1, 0, 3, 2, 1]])
+                    for i, vi in enumerate(order):
+                        n = voicing[vi % len(voicing)]
+                        keys.append(Note(hum(t(bar_i, i * 0.5), 0.01), beat * rng.uniform(0.9, 1.6), n,
+                                         rng.randint(62, 80) if i % 2 == 0 else rng.randint(48, 64)))
+                    hits = []
+                elif comp_style == "strum" and not last:
+                    # genjrengan pelan: bawah (rendah->tinggi) di ketukan, atas (tinggi->rendah) di off-beat
+                    hits = []
+                    for pos, down in rng.choice([[(0, 1), (1.5, 0), (2.5, 0), (3, 1)], [(0, 1), (2, 1), (2.5, 0)],
+                                                 [(0, 1), (1, 1), (1.5, 0), (2.5, 0), (3.5, 0)]]):
+                        st = t(bar_i, pos)
+                        gap = rng.uniform(0.018, 0.035)
+                        notes = voicing if down else voicing[::-1][:3]
+                        for i, n in enumerate(notes):
+                            keys.append(Note(hum(st + i * gap, 0.004), beat * 1.2, n,
+                                             rng.randint(55, 75) if down else rng.randint(38, 55)))
+                elif comp_style == "sustain" or name in ("intro", "outro") or last:
                     hits = [(0.0, 4.0 if not last else 8.0)]
                 elif comp_style == "stab":
                     hits = [(0.0, 1.4), (1.5, 0.9), (2.5, 1.4)] if rng.random() < 0.6 else [(0.0, 2.3), (2.5, 1.4)]
                 else:
                     hits = [(0.0, 4.0)]
-                for (pos, length) in hits:
+                for (pos, length) in (hits if comp_style not in ("pick", "strum") or last else []):
                     st = t(bar_i, pos)
                     strum = rng.uniform(0.008, 0.03)
                     for i, n in enumerate(voicing):
