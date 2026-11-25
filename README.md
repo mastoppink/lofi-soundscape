@@ -47,6 +47,8 @@ Opsi `render`:
 | `--seed` | angka; seed sama = hasil sama persis (tercetak di log) |
 | `--out` | `.wav` atau `.flac` (FLAC ~50% lebih kecil, juga diterima YouTube) |
 | `--lofi` | 0..1, seberapa "kotor"/tape |
+| `--vinyl` | 0..1 kresek/desis vinyl; `0` = tanpa noise |
+| `--no-ambience` | musik saja, tanpa hujan/kafe/dll. |
 | `--mood` | 0 sendu (minor) .. 1 ceria (mayor) |
 | `--music-volume`, `--ambience-volume` | pengali volume |
 | `--cover gambar.jpg --video` | buat juga `.mp4` 1080p (gambar diam) |

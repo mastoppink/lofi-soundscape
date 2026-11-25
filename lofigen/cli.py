@@ -63,6 +63,10 @@ def cmd_render(a):
         preset["lofi"] = a.lofi
     if a.mood is not None:
         preset.setdefault("music", {})["mood"] = a.mood
+    if a.vinyl is not None:
+        preset["vinyl"] = a.vinyl
+    if a.no_ambience:
+        preset["ambience"] = {}
     if a.music_volume is not None:
         preset["music_volume"] = a.music_volume
     if a.ambience_volume is not None:
@@ -95,7 +99,9 @@ def cmd_batch(a):
         print(f"\n=== [{i}/{len(items)}] {name} ===")
         argv = ["render", "--preset", j["preset"], "--duration", str(j.get("duration", "1h")),
                 "--seed", str(seed), "--out", str(outdir / f"{name}.{j.get('format', 'wav')}")]
-        for k in ("lofi", "mood", "music_volume", "ambience_volume", "soundfont", "samples", "cover"):
+        if j.get("no_ambience"):
+            argv.append("--no-ambience")
+        for k in ("lofi", "mood", "vinyl", "music_volume", "ambience_volume", "soundfont", "samples", "cover"):
             if k in j:
                 argv += [f"--{k.replace('_', '-')}", str(j[k])]
         if j.get("cover"):
@@ -115,6 +121,8 @@ def main(argv=None):
     r.add_argument("--out", help="file output (.wav / .flac)")
     r.add_argument("--lofi", type=float, help="0..1 seberapa 'kotor'")
     r.add_argument("--mood", type=float, help="0 sendu .. 1 ceria")
+    r.add_argument("--vinyl", type=float, help="0..1 kresek/desis vinyl (0 = tanpa noise)")
+    r.add_argument("--no-ambience", action="store_true", help="musik saja, tanpa suara latar")
     r.add_argument("--music-volume", type=float)
     r.add_argument("--ambience-volume", type=float, help="pengali volume semua ambience")
     r.add_argument("--soundfont", default=str(DEFAULT_SF))
