@@ -4,6 +4,7 @@ __pycache__/
 soundfonts/*.sf2
 soundfonts/*.sf3
 samples/*/*
+!samples/*/*.ogg
 !samples/*/.gitkeep
 output/
 *.wav

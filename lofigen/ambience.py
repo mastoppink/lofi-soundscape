@@ -12,11 +12,22 @@ from scipy.signal import butter, lfilter, resample_poly, sosfilt
 
 from . import SR
 
-AUDIO_EXT = {".wav", ".flac", ".ogg", ".mp3", ".aif", ".aiff"}
+AUDIO_EXT = {".wav", ".flac", ".ogg", ".oga", ".opus", ".mp3", ".m4a", ".aif", ".aiff"}
+
+
+def _read_ffmpeg(path: Path) -> tuple[np.ndarray, int]:
+    """Cadangan untuk format yang tidak didukung libsndfile (m4a, ogg berisi video, dll.)."""
+    import subprocess
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-vn", "-f", "f32le", "-ac", "2",
+                          "-ar", str(SR), "-"], check=True, capture_output=True).stdout
+    return np.frombuffer(raw, dtype=np.float32).reshape(-1, 2).copy(), SR
 
 
 def load_audio(path: Path) -> np.ndarray:
-    x, sr = sf.read(str(path), dtype="float32", always_2d=True)
+    try:
+        x, sr = sf.read(str(path), dtype="float32", always_2d=True)
+    except Exception:
+        x, sr = _read_ffmpeg(path)
     if x.shape[1] == 1:
         x = np.repeat(x, 2, axis=1)
     x = x[:, :2]

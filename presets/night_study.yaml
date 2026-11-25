@@ -15,4 +15,5 @@ instruments:
   melody: {preset: 24, level: 0.4}            # Nylon Guitar
 ambience:
   rain: 0.35
-  wind: 0.2
+  wind: 0.15
+  thunder: 0.2
