@@ -1,0 +1,18 @@
+name: Night Study
+description: Piano sendu, beat pelan, hujan lembut dan angin malam.
+lofi: 0.65
+vinyl: 0.7
+music_volume: 1.0
+music:
+  bpm: [66, 76]
+  swing: 0.62
+  mood: 0.25
+  energy: 0.35
+instruments:
+  keys:   {preset: 0, level: 1.4}             # Grand Piano
+  bass:   {preset: 33, level: 0.85}           # Finger Bass
+  drums:  {bank: 128, preset: 40, drums: true, level: 0.6}    # Brush kit
+  melody: {preset: 24, level: 0.4}            # Nylon Guitar
+ambience:
+  rain: 0.35
+  wind: 0.2

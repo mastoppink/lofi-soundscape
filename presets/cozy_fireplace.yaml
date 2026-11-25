@@ -1,0 +1,18 @@
+name: Cozy Fireplace
+description: Rhodes + pad hangat, api unggun berderak, salju di luar.
+lofi: 0.6
+vinyl: 0.65
+music_volume: 1.0
+music:
+  bpm: [64, 74]
+  swing: 0.6
+  mood: 0.45
+  energy: 0.3
+instruments:
+  keys:   {preset: 4, level: 1.4}
+  bass:   {preset: 32, level: 0.85}
+  drums:  {bank: 128, preset: 40, drums: true, level: 0.6}
+  melody: {preset: 89, level: 0.35}           # Warm Pad
+ambience:
+  fire: 0.6
+  wind: 0.15

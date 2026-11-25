@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+soundfonts/*.sf2
+soundfonts/*.sf3
+samples/*/*
+!samples/*/.gitkeep
+output/
+*.wav
+*.flac
+*.mp3
+*.mp4
+*.tracklist.txt

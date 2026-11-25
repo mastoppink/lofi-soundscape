@@ -1,0 +1,18 @@
+name: Beach Sunset
+description: Gitar nylon, groove santai, ombak dan burung camar.
+lofi: 0.45
+vinyl: 0.4
+music_volume: 1.0
+music:
+  bpm: [78, 90]
+  swing: 0.58
+  mood: 0.8
+  energy: 0.6
+instruments:
+  keys:   {preset: 24, level: 1.4}            # Nylon Guitar
+  bass:   {preset: 33, level: 0.9}
+  drums:  {bank: 128, preset: 8, drums: true, level: 0.6}    # Room kit
+  melody: {preset: 73, level: 0.35}           # Flute
+ambience:
+  ocean: 0.6
+  birds: 0.25
