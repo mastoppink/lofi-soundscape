@@ -18,6 +18,6 @@ jobs:
           pip install -r requirements.txt pytest
           pip install --no-deps tinysoundfont
       - name: Unduh soundfont
-        run: python -m lofigen setup
+        run: python -m songgen setup
       - name: Test
         run: python -m pytest -q tests

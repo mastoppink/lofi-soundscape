@@ -1,36 +1,36 @@
-"""Efek 'lofi': tape wow/flutter, saturasi, filter, crackle vinyl, sidechain, reverb."""
+"""Efek: EQ per peran, master bus, efek lofi opsional (tape, vinyl), limiter."""
 from __future__ import annotations
 
 import numpy as np
-from pedalboard import (Bitcrush, Chorus, Compressor, HighpassFilter, Limiter, LowpassFilter,
-                        Pedalboard, Reverb, Gain)
+from pedalboard import (Bitcrush, Compressor, Gain, HighpassFilter, Limiter, LowpassFilter,
+                        Pedalboard, Reverb)
 from scipy.signal import butter, sosfilt
 
-from . import SR
+from .. import SR
 
 
 def _pb(board: Pedalboard, x: np.ndarray) -> np.ndarray:
     return board(x.T.astype(np.float32), SR, reset=True).T
 
 
-def stem_fx(name: str, x: np.ndarray, lofi: float) -> np.ndarray:
-    """Efek per instrumen. lofi = 0..1 (seberapa 'kotor')."""
-    lp = 9000 - 5000 * lofi
-    if name == "keys":
-        b = Pedalboard([HighpassFilter(120), Chorus(rate_hz=0.4, depth=0.15, mix=0.25),
-                        LowpassFilter(lp * 0.75), Reverb(room_size=0.55, damping=0.6, wet_level=0.22, dry_level=0.85, width=0.9)])
-    elif name == "melody":
-        b = Pedalboard([HighpassFilter(250), LowpassFilter(lp * 0.8),
-                        Reverb(room_size=0.75, damping=0.5, wet_level=0.35, dry_level=0.7, width=1.0)])
-    elif name == "bass":
-        b = Pedalboard([LowpassFilter(700), Compressor(threshold_db=-18, ratio=3, attack_ms=10, release_ms=120)])
-    elif name == "drums":
-        b = Pedalboard([HighpassFilter(40), Bitcrush(bit_depth=12 - 4 * lofi), LowpassFilter(lp),
-                        Compressor(threshold_db=-16, ratio=4, attack_ms=8, release_ms=90),
-                        Reverb(room_size=0.25, damping=0.7, wet_level=0.08, dry_level=0.95)])
+def stem_fx(role: str, x: np.ndarray, lofi: float = 0.0) -> np.ndarray:
+    """EQ/kompresi per peran (reverb ditangani bus bersama di mixer)."""
+    lp = 18000 - 12000 * lofi
+    if role == "chords":
+        b = [HighpassFilter(90), LowpassFilter(lp)]
+    elif role == "melody":
+        b = [HighpassFilter(140), LowpassFilter(lp), Compressor(threshold_db=-20, ratio=2, attack_ms=15, release_ms=150)]
+    elif role == "bass":
+        b = [HighpassFilter(35), LowpassFilter(min(lp, 4000)), Compressor(threshold_db=-20, ratio=3, attack_ms=10, release_ms=120)]
+    elif role == "drums":
+        b = [HighpassFilter(35), LowpassFilter(lp), Compressor(threshold_db=-18, ratio=2.5, attack_ms=8, release_ms=90)]
+        if lofi > 0.3:
+            b.insert(1, Bitcrush(bit_depth=14 - 6 * lofi))
+    elif role == "pad":
+        b = [HighpassFilter(120), LowpassFilter(min(lp, 9000))]
     else:
         return x
-    return _pb(b, x)
+    return _pb(Pedalboard(b), x)
 
 
 def sidechain(x: np.ndarray, kick_times, depth: float = 0.35, release: float = 0.22) -> np.ndarray:
@@ -93,10 +93,11 @@ class Vinyl:
 
 
 def master(x: np.ndarray, lofi: float, rng: np.random.Generator) -> np.ndarray:
-    x = wow_flutter(x, 0.5 + lofi, rng)
-    x = saturate(x, 0.2 + 0.4 * lofi)
-    b = Pedalboard([HighpassFilter(30), LowpassFilter(12000 - 6000 * lofi),
-                    Compressor(threshold_db=-14, ratio=2, attack_ms=30, release_ms=200)])
+    if lofi > 0:
+        x = wow_flutter(x, 0.3 + lofi, rng)
+        x = saturate(x, 0.1 + 0.4 * lofi)
+    b = Pedalboard([HighpassFilter(28), LowpassFilter(19000 - 10000 * lofi),
+                    Compressor(threshold_db=-16, ratio=1.8, attack_ms=30, release_ms=250)])
     return _pb(b, x)
 
 

@@ -10,7 +10,7 @@ import numpy as np
 import soundfile as sf
 from scipy.signal import butter, lfilter, resample_poly, sosfilt
 
-from . import SR
+from .. import SR
 
 AUDIO_EXT = {".wav", ".flac", ".ogg", ".oga", ".opus", ".mp3", ".m4a", ".aif", ".aiff"}
 

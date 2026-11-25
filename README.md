@@ -1,113 +1,128 @@
-# lofigen: generator musik lofi + soundscape untuk YouTube
+# songgen: generator lagu instrumental berbasis layer
 
-Membuat mix lofi panjang (30 menit – berjam-jam) secara prosedural: setiap "lagu" dikomposisi
-dari seed (akor jazzy, bass, drum ber-swing, melodi), dimainkan dengan instrumen **sampel asli**
-dari SoundFont, diberi efek lofi (tape wow/flutter, saturasi, filter, crackle vinyl, sidechain),
-lalu dicampur dengan **rekaman ambience** (hujan, kafe, ombak, api unggun …).
+Membuat lagu instrumental (jazz dulu; bossa nova & cinematic menyusul) **layer per layer**:
+piano, bass, drum, melodi, strings, dan seterusnya. Setiap layer punya instrumen, gaya main,
+kepadatan, volume, pan, dan reverb sendiri, dan bisa **diacak ulang sendiri** tanpa mengubah
+layer lain. Mood diatur dengan dua slider: **valence** (sedih ↔ senang) dan **energy**
+(tenang ↔ enerjik).
 
-Hasil: file WAV + tracklist dengan timestamp untuk deskripsi YouTube, dan (opsional) MP4 siap upload.
-Render ~15–20× lebih cepat dari realtime (1 jam ≈ 3–4 menit) dengan memori kecil.
+Instrumen memakai sampel asli dari SoundFont (GeneralUser GS). GUI di browser menyusul
+(tahap 3); saat ini dipakai lewat command line.
+
+> Status: **tahap 1**: engine berbasis layer + genre jazz. Lihat [Rencana](#rencana).
 
 ## Instalasi
 
-Butuh Python 3.10+ dan (untuk video) ffmpeg.
+**Mac:** `brew install python ffmpeg` · **Windows:** python.org + `winget install ffmpeg` ·
+**Linux:** `sudo apt install python3-venv ffmpeg`
 
-**Mac**
-```bash
-brew install python ffmpeg
-```
-**Windows**: instal Python dari python.org, lalu `winget install ffmpeg`.
-**Linux**: `sudo apt install python3-venv ffmpeg libsndfile1`.
-
-Lalu (semua OS):
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pip install --no-deps tinysoundfont
-python -m lofigen setup          # unduh soundfont GeneralUser GS (~32 MB) + buat folder sampel
+python -m songgen setup          # unduh soundfont (~32 MB)
 ```
-
-Lalu isi `samples/` dengan rekaman ambience CC0: lihat [samples/README.md](samples/README.md).
 
 ## Pemakaian
 
 ```bash
-python -m lofigen presets                                  # lihat daftar preset
-python -m lofigen render --preset rainy_cafe --duration 1h --out mix.wav
-python -m lofigen render --preset night_study --duration 2h --seed 42 --cover cover.jpg --video
+# langsung render: jazz sedih & tenang, ±5 menit
+python -m songgen render --genre jazz --valence 0.2 --energy 0.3 --duration 5m -o lagu.wav
+
+# preview 30 detik pertama saja
+python -m songgen render --valence 0.7 --energy 0.6 --preview 30s -o coba.wav
 ```
 
-Opsi `render`:
+Setiap render menyimpan juga `lagu.json`, berisi semua pengaturan lagu dan layer. File ini
+bisa diedit lalu dirender ulang:
+
+```bash
+python -m songgen info lagu.json                 # lihat struktur & akor
+python -m songgen reroll lagu.json --layer lead  # acak ulang melodi saja
+python -m songgen render lagu.json -o lagu_v2.wav
+python -m songgen render lagu.json --solo bass,drums --preview 30s   # dengar sebagian layer
+python -m songgen render lagu.json --mute strings --stems stems/     # simpan audio per layer
+```
+
+Atau buat file lagu dulu tanpa render: `python -m songgen new --valence 0.4 --energy 0.5 -o lagu.json`.
+
+### Opsi global
 
 | Opsi | Arti |
 |---|---|
-| `--preset` | `rainy_cafe`, `night_study`, `beach_sunset`, `cozy_fireplace`, atau path ke file `.yaml` |
-| `--duration` | `30m`, `1h`, `2h30m`, … |
-| `--seed` | angka; seed sama = hasil sama persis (tercetak di log) |
-| `--out` | `.wav` atau `.flac` (FLAC ~50% lebih kecil, juga diterima YouTube) |
-| `--lofi` | 0..1, seberapa "kotor"/tape |
-| `--vinyl` | 0..1 kresek/desis vinyl; `0` = tanpa noise |
-| `--no-ambience` | musik saja, tanpa hujan/kafe/dll. |
-| `--mood` | 0 sendu (minor) .. 1 ceria (mayor) |
-| `--music-volume`, `--ambience-volume` | pengali volume |
-| `--cover gambar.jpg --video` | buat juga `.mp4` 1080p (gambar diam) |
+| `--valence` | 0 sedih (minor, akor gelap) .. 1 senang (mayor, cerah) |
+| `--energy` | 0 tenang (ballad, brush) .. 1 enerjik (up-tempo, ride) |
+| `--duration` | target durasi, mis. `3m`, `5m`, `10m` (lagu berhenti di akhir frasa terdekat) |
+| `--seed` | angka; seed sama = lagu sama persis |
+| `--tempo`, `--key`, `--mode`, `--swing` | menimpa nilai otomatis |
+| `--lofi` | 0 bersih .. 1 efek kaset/vinyl |
 
-Output tambahan: `<nama>.tracklist.txt`, tinggal copy ke deskripsi YouTube.
+### Layer di file `.json`
 
-### Render banyak sekaligus
-
-Tulis daftar mix di file YAML (contoh: `batch_example.yaml`), lalu:
-
-```bash
-python -m lofigen batch batch_example.yaml
+```json
+{ "id": "lead", "role": "melody",
+  "instrument": {"preset": 66, "bank": 0, "drums": false, "name": "Tenor Sax"},
+  "style": "head+solo", "density": 0.5, "volume": 0.8, "pan": 0.2, "reverb": 0.3,
+  "octave": 0, "sections": ["head", "solo", "ending"], "seed": null,
+  "enabled": true, "mute": false, "solo": false }
 ```
 
-Semua hasil masuk ke folder `output/`; kalau `cover` diisi, MP4-nya ikut dibuat.
+| Peran (`role`) | Gaya (`style`) jazz |
+|---|---|
+| `chords` | `comping`, `ballad`, `stabs`, `sustain` |
+| `bass` | `walking`, `two`, `pedal` |
+| `drums` | `ride`, `brush`, `sparse` |
+| `melody` | `head+solo`, `head` (tema), `solo` (improvisasi), `fills` |
+| `pad` | `sustain`, `swell` |
 
-### Ambience di preset
+Instrumen memakai nomor General MIDI, mis. 0 Grand Piano, 4 Rhodes, 11 Vibraphone,
+26 Jazz Guitar, 32 Acoustic Bass, 56 Trumpet, 59 Muted Trumpet, 65 Alto Sax, 66 Tenor Sax,
+73 Flute, 49 Strings. Drum: `bank 128`, preset 32 Jazz, 40 Brush.
 
-```yaml
-ambience:
-  rain: 0.5                              # volume saja
-  cafe: {volume: 0.3, drift: 0.4}        # drift = seberapa banyak volume naik-turun pelan (default 0.3)
-  thunder: {volume: 0.35, every: 120}    # suara sesekali, rata-rata tiap 120 detik
-```
+`sections` menentukan di bagian lagu mana layer bunyi: `intro`, `head`, `solo`, `ending`.
 
-`thunder` otomatis diputar sesekali; layer lain bisa dibuat begitu juga dengan menambahkan `every`.
+## Cara kerja (jazz)
 
-## Membuat preset sendiri
-
-Salin salah satu file di `presets/` lalu ubah. Instrumen memakai nomor General MIDI
-(0 Grand Piano, 4 Rhodes, 11 Vibraphone, 24 Nylon Guitar, 32/33 bass, 73 Flute, 89 Warm Pad;
-drum bank 128: 0 Standard, 8 Room, 32 Jazz, 40 Brush). Bisa juga pakai soundfont lain yang lebih
-realistis (mis. piano `.sf2` khusus) lewat `--soundfont path.sf2`.
-
-## Test
-
-```bash
-pip install pytest && python -m pytest -q tests
-```
-
-CI GitHub Actions menjalankan test ini di macOS, Windows, dan Linux setiap push.
+1. **Bentuk lagu:** intro 4 bar → head (tema AABA 32 bar) → solo (jumlah putaran menyesuaikan
+   durasi) → head → ending.
+2. **Harmoni:** frasa A dan B dipilih dari pustaka progresi (ii-V-I, turnaround, rhythm-changes
+   bridge, minor ii-V); mood menentukan mayor/minor, tempo, dan swing.
+3. **Tiap layer** dibuat oleh generator perannya dengan seed sendiri:
+   - piano comping (pola Charleston, voicing rootless, voice leading)
+   - walking bass (root di awal akor, approach kromatik ke akor berikutnya)
+   - drum ride "spang-a-lang" / brush
+   - melodi: **tema berbasis motif** yang diulang tiap A, improvisasi saat solo
+4. **Mix:** level otomatis per peran, pan, satu reverb ruangan bersama, kompresor master,
+   limiter (puncak -1 dB).
 
 ## Struktur
 
 ```
-lofigen/
-  theory.py     akor, progression, voicing
-  composer.py   komposisi lagu dari seed (struktur, keys, bass, drum, melodi)
-  sfrender.py   render not → audio via SoundFont
-  fx.py         efek per instrumen, master lofi, vinyl, limiter
-  ambience.py   layer rekaman (loop crossfade) + cadangan sintetis
-  render.py     playlist, crossfade antar lagu, tulis per potongan, tracklist
-  video.py      ffmpeg → MP4
-  cli.py        command line
-presets/        preset YAML
-samples/        rekaman ambience (isi sendiri)
+songgen/
+  cli.py
+  engine/
+    song.py          SongSpec + Layer (JSON)
+    arrangement.py   tempo, kunci, bagian lagu, akor per ketukan, swing
+    theory.py        akor, skala, voicing
+    genres/jazz.py   bentuk, progresi, nilai bawaan layer
+    roles/           chords, bass, drums, melody, pad
+    mixer.py         render per layer + mix
+    render.py        pipeline lengkap
+    sfrender.py, fx.py, ambience.py, video.py
+tests/
 ```
+
+## Rencana
+
+1. ✅ Engine berbasis layer + jazz
+2. Bossa nova & cinematic
+3. GUI mode Simpel (browser, localhost)
+4. GUI mode Advanced + simpan preset
+5. Mix panjang 1–3 jam, tracklist, MP4, layer ambience
+6. Ekspor MIDI & stem
 
 ## Lisensi aset
 
-- **GeneralUser GS** oleh S. Christian Collins: bebas dipakai, termasuk untuk musik komersial.
-- Musik yang dihasilkan adalah milikmu. Pastikan sampel ambience berlisensi CC0/komersial.
+GeneralUser GS oleh S. Christian Collins: bebas dipakai, termasuk untuk musik komersial.
+Sampel ambience di `samples/`: public domain/CC0 (lihat `samples/CREDITS.md`).
