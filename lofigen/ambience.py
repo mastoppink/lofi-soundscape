@@ -124,26 +124,89 @@ class SynthLayer:
         return (y * CAL[self.kind]).astype(np.float32)
 
 
+class EventLayer:
+    """Suara sesekali (mis. petir): potongan acak 8-20 detik dengan fade, jeda acak di antaranya."""
+
+    def __init__(self, files: list[Path], rng: np.random.Generator, every: float = 90.0):
+        self.clips = [load_audio(f) for f in files]
+        self.rng, self.every = rng, every
+        self.wait = int(rng.uniform(0.3, 1.0) * every * SR)
+        self.cur = np.zeros((0, 2), np.float32)
+
+    def _new_event(self) -> np.ndarray:
+        c = self.clips[self.rng.integers(len(self.clips))]
+        ln = min(len(c), int(self.rng.uniform(8, 20) * SR))
+        s = int(self.rng.integers(0, max(1, len(c) - ln)))
+        ev = c[s:s + ln].copy()
+        f = min(int(2.5 * SR), ln // 3)
+        ev[:f] *= np.linspace(0, 1, f)[:, None]
+        ev[-f:] *= np.linspace(1, 0, f)[:, None]
+        return ev * self.rng.uniform(0.6, 1.2)
+
+    def read(self, n: int) -> np.ndarray:
+        out = np.zeros((n, 2), np.float32)
+        pos = 0
+        while pos < n:
+            if len(self.cur):
+                k = min(n - pos, len(self.cur))
+                out[pos:pos + k] = self.cur[:k]
+                self.cur = self.cur[k:]
+                pos += k
+                if not len(self.cur):
+                    self.wait = int(self.rng.exponential(self.every) * SR) + 10 * SR
+            else:
+                k = min(n - pos, self.wait)
+                pos += k
+                self.wait -= k
+                if self.wait <= 0:
+                    self.cur = self._new_event()
+        return out
+
+
+class Drift:
+    """Volume yang naik-turun perlahan (±depth) supaya ambience terasa hidup, tidak statis."""
+
+    def __init__(self, rng: np.random.Generator, depth: float = 0.3):
+        self.p = [(rng.uniform(40, 180), rng.uniform(0, 6.28)) for _ in range(2)]
+        self.depth, self.t = depth, 0
+
+    def __call__(self, n: int) -> np.ndarray:
+        tt = (self.t + np.arange(n)) / SR
+        self.t += n
+        m = sum(np.sin(2 * np.pi * tt / per + ph) for per, ph in self.p) / 2
+        return (1 + self.depth * m).astype(np.float32)[:, None]
+
+
+EVENT_LAYERS = {"thunder"}
+
+
 class Ambience:
-    def __init__(self, layers: dict[str, float], samples_dir: Path, seed: int, log=print):
+    def __init__(self, layers: dict, samples_dir: Path, seed: int, log=print):
+        """layers: {nama: volume} atau {nama: {volume: x, every: detik, drift: 0..1}}"""
         self.layers = []
         rng = np.random.default_rng(seed + 999)
-        for name, vol in layers.items():
+        for name, spec in layers.items():
+            spec = spec if isinstance(spec, dict) else {"volume": spec}
+            vol = spec.get("volume", 0.5)
             if vol <= 0:
                 continue
             d = samples_dir / name
             files = sorted(p for p in d.glob("*") if p.suffix.lower() in AUDIO_EXT) if d.exists() else []
-            if files:
+            if files and (name in EVENT_LAYERS or "every" in spec):
+                every = spec.get("every", 90)
+                log(f"  ambience '{name}': {len(files)} rekaman, sesekali (~tiap {every:.0f} dtk)")
+                self.layers.append((EventLayer(files, rng, every), vol, Drift(rng, 0.0)))
+            elif files:
                 log(f"  ambience '{name}': {len(files)} rekaman")
-                self.layers.append((SampleLayer(files, rng), vol))
+                self.layers.append((SampleLayer(files, rng), vol, Drift(rng, spec.get("drift", 0.3))))
             elif name in ("rain", "wind", "ocean", "fire"):
                 log(f"  ambience '{name}': tidak ada rekaman di {d}, pakai versi sintetis")
-                self.layers.append((SynthLayer(name, rng), vol))
+                self.layers.append((SynthLayer(name, rng), vol, Drift(rng, spec.get("drift", 0.3))))
             else:
                 log(f"  ambience '{name}': dilewati (taruh file audio di {d})")
 
     def read(self, n: int) -> np.ndarray:
         out = np.zeros((n, 2), dtype=np.float32)
-        for layer, vol in self.layers:
-            out += layer.read(n) * vol
+        for layer, vol, drift in self.layers:
+            out += layer.read(n) * vol * drift(n)
         return out

@@ -81,6 +81,28 @@ def cmd_render(a):
         make_video(out, Path(a.cover), out.with_suffix(".mp4"))
 
 
+def cmd_batch(a):
+    """Render banyak mix dari satu file YAML (lihat batch_example.yaml)."""
+    jobs = yaml.safe_load(Path(a.file).read_text())
+    defaults = jobs.get("defaults", {})
+    outdir = Path(jobs.get("output_dir", "output"))
+    outdir.mkdir(parents=True, exist_ok=True)
+    items = jobs["jobs"]
+    for i, job in enumerate(items, 1):
+        j = {**defaults, **job}
+        seed = j.get("seed", random.randrange(1_000_000))
+        name = j.get("name", f"{Path(j['preset']).stem}_{seed}")
+        print(f"\n=== [{i}/{len(items)}] {name} ===")
+        argv = ["render", "--preset", j["preset"], "--duration", str(j.get("duration", "1h")),
+                "--seed", str(seed), "--out", str(outdir / f"{name}.{j.get('format', 'wav')}")]
+        for k in ("lofi", "mood", "music_volume", "ambience_volume", "soundfont", "samples", "cover"):
+            if k in j:
+                argv += [f"--{k.replace('_', '-')}", str(j[k])]
+        if j.get("cover"):
+            argv.append("--video")
+        main(argv)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="lofigen", description="Generator musik lofi + soundscape untuk YouTube")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -100,6 +122,9 @@ def main(argv=None):
     r.add_argument("--cover", help="gambar untuk video")
     r.add_argument("--video", action="store_true", help="buat juga MP4 (butuh ffmpeg + --cover)")
     r.set_defaults(fn=cmd_render)
+    bt = sub.add_parser("batch", help="render banyak mix dari file YAML")
+    bt.add_argument("file")
+    bt.set_defaults(fn=cmd_batch)
     a = ap.parse_args(argv)
     a.fn(a)
 

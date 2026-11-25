@@ -16,4 +16,4 @@ instruments:
 ambience:
   rain: 0.35
   wind: 0.15
-  thunder: 0.2
+  thunder: {volume: 0.35, every: 120}   # petir sesekali

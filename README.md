@@ -53,12 +53,41 @@ Opsi `render`:
 
 Output tambahan: `<nama>.tracklist.txt`, tinggal copy ke deskripsi YouTube.
 
+### Render banyak sekaligus
+
+Tulis daftar mix di file YAML (contoh: `batch_example.yaml`), lalu:
+
+```bash
+python -m lofigen batch batch_example.yaml
+```
+
+Semua hasil masuk ke folder `output/`; kalau `cover` diisi, MP4-nya ikut dibuat.
+
+### Ambience di preset
+
+```yaml
+ambience:
+  rain: 0.5                              # volume saja
+  cafe: {volume: 0.3, drift: 0.4}        # drift = seberapa banyak volume naik-turun pelan (default 0.3)
+  thunder: {volume: 0.35, every: 120}    # suara sesekali, rata-rata tiap 120 detik
+```
+
+`thunder` otomatis diputar sesekali; layer lain bisa dibuat begitu juga dengan menambahkan `every`.
+
 ## Membuat preset sendiri
 
 Salin salah satu file di `presets/` lalu ubah. Instrumen memakai nomor General MIDI
 (0 Grand Piano, 4 Rhodes, 11 Vibraphone, 24 Nylon Guitar, 32/33 bass, 73 Flute, 89 Warm Pad;
 drum bank 128: 0 Standard, 8 Room, 32 Jazz, 40 Brush). Bisa juga pakai soundfont lain yang lebih
 realistis (mis. piano `.sf2` khusus) lewat `--soundfont path.sf2`.
+
+## Test
+
+```bash
+pip install pytest && python -m pytest -q tests
+```
+
+CI GitHub Actions menjalankan test ini di macOS, Windows, dan Linux setiap push.
 
 ## Struktur
 
