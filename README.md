@@ -7,7 +7,7 @@ layer lain. Mood diatur dengan dua slider: **valence** (sedih ↔ senang) dan **
 (tenang ↔ enerjik).
 
 Bawaan jazz adalah **piano trio** dengan instrumen rekaman asli: Salamander Grand Piano
-(16 tingkat kekuatan tekan) dan upright bass pizzicato dari VSCO-2. Instrumen lain memakai
+(16 tingkat kekuatan tekan), upright bass pizzicato dari VSCO-2, dan drum kit dari VCSL (snare, kick, hi-hat, cymbal rekaman asli). Instrumen lain memakai
 SoundFont GeneralUser GS. GUI di browser menyusul (tahap 3); saat ini dipakai lewat command line.
 
 > Status: **tahap 1**: engine berbasis layer + genre jazz. Lihat [Rencana](#rencana).
@@ -22,7 +22,7 @@ python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pip install --no-deps tinysoundfont
-python -m songgen setup          # unduh soundfont + library piano & bass (~90 MB)
+python -m songgen setup          # unduh soundfont + library piano, bass, drum (~140 MB)
 ```
 
 ## Pemakaian
@@ -130,6 +130,6 @@ tests/
 
 - **Salamander Grand Piano V3** oleh Alexander Holm: **CC BY 3.0**. Wajib dicantumkan di
   deskripsi video, mis.: `Piano samples: Salamander Grand Piano V3 by Alexander Holm (CC BY 3.0)`.
-- **VSCO-2 Community Edition** (upright bass) oleh Versilian Studios: CC0.
+- **VSCO-2 CE** (upright bass) dan **VCSL** (drum) oleh Versilian Studios: CC0.
 - **GeneralUser GS** oleh S. Christian Collins: bebas dipakai, termasuk untuk musik komersial.
 Sampel ambience di `samples/`: public domain/CC0 (lihat `samples/CREDITS.md`).

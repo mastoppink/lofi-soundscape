@@ -37,6 +37,7 @@ class LibDef:
     gain_db: float = 0.0
     max_len: float = 12.0        # potong sampel yang sangat panjang
     vel_curve: float = 0.6       # 0 = velocity tidak mengubah volume dalam satu layer, 1 = linear
+    exact: bool = False          # True = hanya nada yang dipetakan (drum), tanpa geser pitch
 
 
 def _parse_name(stem: str, pattern: str, octave_offset: int):
@@ -51,6 +52,11 @@ def _parse_name(stem: str, pattern: str, octave_offset: int):
 def load_lib(lib_dir: Path) -> LibDef:
     """Membaca instrument.json di folder library."""
     meta = json.loads((lib_dir / "instrument.json").read_text())
+    common = (meta.get("release", 0.25), meta.get("gain_db", 0.0), meta.get("max_len", 12.0), meta.get("vel_curve", 0.6))
+    if "map" in meta:
+        # peta eksplisit (drum kit): nada -> [file, vel_lo, vel_hi]; tanpa geser pitch
+        zones = [Zone(lib_dir / f, int(k), lo, hi) for k, lst in meta["map"].items() for f, lo, hi in lst]
+        return LibDef(meta["name"], zones, *common, exact=True)
     parsed = []
     for p in sorted(lib_dir.glob(meta.get("glob", "*.wav"))):
         r = _parse_name(p.stem, meta["pattern"], meta.get("octave_offset", 1))
@@ -62,8 +68,7 @@ def load_lib(lib_dir: Path) -> LibDef:
     # bagi rentang velocity 1..127 rata ke tiap layer
     bounds = {v: (1 + i * 127 // len(vels), (i + 1) * 127 // len(vels)) for i, v in enumerate(vels)}
     zones = [Zone(p, k, *bounds[v], rr) for p, k, v, rr in parsed]
-    return LibDef(meta["name"], zones, meta.get("release", 0.25), meta.get("gain_db", 0.0),
-                  meta.get("max_len", 12.0), meta.get("vel_curve", 0.6))
+    return LibDef(meta["name"], zones, *common)
 
 
 @lru_cache(maxsize=4096)
@@ -96,7 +101,9 @@ class Sampler:
             self.by_key.setdefault(z.key, []).append(z)
         self.keys = sorted(self.by_key)
 
-    def _pick(self, key: int, vel: int) -> Zone:
+    def _pick(self, key: int, vel: int) -> Zone | None:
+        if self.lib.exact and key not in self.by_key:
+            return None
         # rekaman terdekat; utamakan geser pitch kecil (dan sedikit preferensi ke bawah -> warna lebih alami)
         k0 = min(self.keys, key=lambda k: (abs(k - key), k > key))
         zs = [z for z in self.by_key[k0] if z.vel_lo <= vel <= z.vel_hi]
@@ -114,6 +121,8 @@ class Sampler:
             if st >= total:
                 continue
             z = self._pick(n.key, n.vel)
+            if z is None:
+                continue
             x = _shifted(str(z.path), self.lib.max_len, n.key - z.key)
             hold = int(n.dur * SR)
             ln = min(len(x), hold + rel, total - st)
