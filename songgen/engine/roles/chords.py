@@ -18,7 +18,7 @@ COMP = [
 def generate(arr, layer, rng):
     notes = []
     style = layer.style if layer.style != "auto" else "comping"
-    lo, hi = 48 + 12 * layer.octave, 72 + 12 * layer.octave
+    lo, hi = 48 + 12 * layer.octave, 67 + 12 * layer.octave
     prev = None
     bpb = arr.beats_per_bar
     for sec in arr.sections:
