@@ -12,6 +12,7 @@ class Instrument:
     bank: int = 0               # 128 = drum kit
     drums: bool = False
     name: str = ""
+    lib: str = ""               # nama library sampel di instruments/ (kosong = pakai soundfont)
 
 
 @dataclass

@@ -55,10 +55,11 @@ def cmd_setup(a):
     DEFAULT_SF.parent.mkdir(exist_ok=True)
     if DEFAULT_SF.exists():
         print(f"Soundfont sudah ada: {DEFAULT_SF}")
-        return
-    print(f"Mengunduh GeneralUser GS (~32 MB) ke {DEFAULT_SF} ...")
-    urllib.request.urlretrieve(SF_URL, DEFAULT_SF)
-    print("Selesai.")
+    else:
+        print(f"Mengunduh GeneralUser GS (~32 MB) ke {DEFAULT_SF} ...")
+        urllib.request.urlretrieve(SF_URL, DEFAULT_SF)
+    from .engine.libraries import install
+    install()
 
 
 def cmd_new(a):

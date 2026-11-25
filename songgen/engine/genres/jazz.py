@@ -19,14 +19,18 @@ STYLES = {
     "pad": ["sustain", "swell"],
 }
 
+# pilihan instrumen per peran: (preset GM, nama, library sampel). Library = rekaman asli (lebih realistis).
 INSTRUMENTS = {
-    "chords": [(0, "Grand Piano"), (4, "Rhodes"), (11, "Vibraphone"), (26, "Jazz Guitar")],
-    "bass": [(32, "Acoustic Bass"), (33, "Finger Bass")],
-    "drums": [(32, "Jazz Kit"), (40, "Brush Kit"), (8, "Room Kit")],
-    "melody": [(66, "Tenor Sax"), (65, "Alto Sax"), (56, "Trumpet"), (59, "Muted Trumpet"),
-               (11, "Vibraphone"), (73, "Flute"), (71, "Clarinet"), (0, "Grand Piano")],
-    "pad": [(49, "Slow Strings"), (48, "Strings"), (89, "Warm Pad")],
+    "chords": [(0, "Grand Piano", "salamander_piano"), (0, "Grand Piano (GM)", ""), (4, "Rhodes", ""),
+               (11, "Vibraphone", ""), (26, "Jazz Guitar", "")],
+    "bass": [(32, "Upright Bass", "upright_bass"), (32, "Acoustic Bass (GM)", ""), (33, "Finger Bass", "")],
+    "drums": [(32, "Jazz Kit", ""), (40, "Brush Kit", ""), (8, "Room Kit", "")],
+    "melody": [(0, "Grand Piano", "salamander_piano"), (11, "Vibraphone", ""), (26, "Jazz Guitar", ""),
+               (66, "Tenor Sax", ""), (65, "Alto Sax", ""), (56, "Trumpet", ""), (59, "Muted Trumpet", ""),
+               (73, "Flute", "")],
+    "pad": [(49, "Slow Strings", ""), (48, "Strings", ""), (89, "Warm Pad", "")],
 }
+
 
 # ---- harmoni (derajat relatif ke tonika) ----
 A_MAJOR = [
@@ -104,23 +108,21 @@ def arrange(spec: SongSpec) -> Arrangement:
 
 
 def default_spec(valence: float = 0.5, energy: float = 0.5, duration: float = 300, seed: int = 1) -> SongSpec:
-    rng = random.Random(seed * 7 + 3)
+    """Bawaan: jazz piano trio (piano + upright bass + drum), melodi dimainkan tangan kanan piano."""
     ballad = energy < 0.3
     sad = valence < 0.4
-    lead = rng.choice([(66, "Tenor Sax"), (59, "Muted Trumpet")] if sad else
-                      [(65, "Alto Sax"), (56, "Trumpet"), (66, "Tenor Sax"), (11, "Vibraphone")])
+    brush = ballad or energy < 0.45
+    piano = Instrument(0, name="Grand Piano", lib="salamander_piano")
     layers = [
-        Layer("piano", "chords", Instrument(0, name="Grand Piano"), "ballad" if ballad else "comping",
-              density=0.5, volume=0.8, pan=-0.25, reverb=0.25),
-        Layer("bass", "bass", Instrument(32, name="Acoustic Bass"), "two" if ballad else "walking",
-              density=0.5, volume=0.95, pan=0.05, reverb=0.1),
-        Layer("drums", "drums", Instrument(40, 128, True, "Brush Kit") if ballad or energy < 0.45
-              else Instrument(32, 128, True, "Jazz Kit"), "brush" if ballad or energy < 0.45 else "ride",
-              density=0.5, volume=0.7, pan=0.1, reverb=0.2),
-        Layer("lead", "melody", Instrument(lead[0], name=lead[1]), "head+solo",
-              density=0.5, volume=0.8, pan=0.2, reverb=0.3, sections=["head", "solo", "ending"]),
+        Layer("comping", "chords", piano, "ballad" if ballad else "comping",
+              density=0.45, volume=0.75, pan=-0.15, reverb=0.22),
+        Layer("bass", "bass", Instrument(32, name="Upright Bass", lib="upright_bass"), "two" if ballad else "walking",
+              density=0.5, volume=0.95, pan=0.1, reverb=0.1),
+        Layer("drums", "drums", Instrument(40, 128, True, "Brush Kit") if brush else Instrument(32, 128, True, "Jazz Kit"),
+              "brush" if brush else "ride", density=0.5, volume=0.6, pan=0.15, reverb=0.18),
+        Layer("melody", "melody", piano, "head+solo",
+              density=0.45, volume=0.85, pan=-0.15, reverb=0.25, sections=["head", "solo", "ending"]),
         Layer("strings", "pad", Instrument(49, name="Slow Strings"), "swell",
-              density=0.3, volume=0.35, pan=-0.1, reverb=0.5, enabled=ballad or sad,
-              sections=["head", "ending"]),
+              density=0.3, volume=0.3, pan=0.0, reverb=0.5, enabled=False, sections=["head", "ending"]),
     ]
     return SongSpec(genre=NAME, valence=valence, energy=energy, duration=duration, seed=seed, layers=layers)

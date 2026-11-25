@@ -13,6 +13,7 @@ from .. import SR
 from .arrangement import Arrangement
 from .fx import StreamLimiter, Vinyl, master, stem_fx
 from .roles import generate
+from .sampler import Sampler, available, load_lib
 from .sfrender import Instrument as SfInstrument
 from .song import Layer, Note, SongSpec
 
@@ -28,12 +29,20 @@ def layer_seed(spec: SongSpec, layer: Layer) -> int:
     return (spec.seed * 1_000_003 + zlib.crc32(layer.id.encode())) & 0x7FFFFFFF
 
 
+# 'feel' per peran (detik): bass sedikit di depan ketukan, piano & melodi sedikit di belakang (laid back)
+ROLE_FEEL = {"bass": -0.006, "drums": 0.0, "chords": 0.008, "melody": 0.014, "pad": 0.02}
+
+
 def compose(spec: SongSpec, arr: Arrangement) -> dict[str, list[Note]]:
     """Not untuk semua layer aktif. Setiap layer pakai seed sendiri -> bisa diacak ulang terpisah."""
     out = {}
     for layer in spec.layers:
         if layer.enabled:
-            out[layer.id] = generate(arr, layer, random.Random(layer_seed(spec, layer)))
+            notes = generate(arr, layer, random.Random(layer_seed(spec, layer)))
+            off = ROLE_FEEL.get(layer.role, 0.0) * (1.0 if arr.tempo < 140 else 0.5)
+            for n in notes:
+                n.start = max(0.0, n.start + off)
+            out[layer.id] = notes
     return out
 
 
@@ -51,8 +60,13 @@ def render_stems(spec: SongSpec, arr: Arrangement, notes: dict, soundfont: Path,
     for layer in audible(spec):
         ins = layer.instrument
         log(f"  render layer '{layer.id}' ({ins.name or ins.preset}, {layer.style}, {len(notes[layer.id])} not)")
-        sf = SfInstrument(data, ins.bank, ins.preset, drums=ins.drums)
-        x = sf.render(notes[layer.id], dur)
+        libs = available()
+        if ins.lib and ins.lib in libs:
+            x = Sampler(load_lib(libs[ins.lib]), layer_seed(spec, layer)).render(notes[layer.id], dur)
+        else:
+            if ins.lib:
+                log(f"    (library '{ins.lib}' belum diunduh, pakai soundfont; jalankan: python -m songgen setup)")
+            x = SfInstrument(data, ins.bank, ins.preset, drums=ins.drums).render(notes[layer.id], dur)
         stems[layer.id] = stem_fx(layer.role, x, spec.lofi)
     return stems
 

@@ -76,17 +76,17 @@ def test_reroll_changes_only_that_layer():
     spec = jazz.default_spec(0.5, 0.5, 200, 5)
     arr = jazz.arrange(spec)
     a = compose(spec, arr)
-    spec.layer("lead").seed = layer_seed(spec, spec.layer("lead")) + 1
+    spec.layer("melody").seed = layer_seed(spec, spec.layer("melody")) + 1
     b = compose(spec, arr)
-    assert [n.key for n in a["lead"]] != [n.key for n in b["lead"]]
-    for lid in ("piano", "bass", "drums"):
+    assert [n.key for n in a["melody"]] != [n.key for n in b["melody"]]
+    for lid in ("comping", "bass", "drums"):
         assert [(n.start, n.key) for n in a[lid]] == [(n.start, n.key) for n in b[lid]]
 
 
 def test_head_theme_repeats():
     spec = jazz.default_spec(0.6, 0.5, 300, 9)
     arr = jazz.arrange(spec)
-    lead = compose(spec, arr)["lead"]
+    lead = compose(spec, arr)["melody"]
     bs = arr.beat_sec
     a_secs = [s for s in arr.sections if s.kind == "head" and s.label == "A"][:2]
 

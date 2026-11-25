@@ -6,8 +6,9 @@ kepadatan, volume, pan, dan reverb sendiri, dan bisa **diacak ulang sendiri** ta
 layer lain. Mood diatur dengan dua slider: **valence** (sedih ↔ senang) dan **energy**
 (tenang ↔ enerjik).
 
-Instrumen memakai sampel asli dari SoundFont (GeneralUser GS). GUI di browser menyusul
-(tahap 3); saat ini dipakai lewat command line.
+Bawaan jazz adalah **piano trio** dengan instrumen rekaman asli: Salamander Grand Piano
+(16 tingkat kekuatan tekan) dan upright bass pizzicato dari VSCO-2. Instrumen lain memakai
+SoundFont GeneralUser GS. GUI di browser menyusul (tahap 3); saat ini dipakai lewat command line.
 
 > Status: **tahap 1**: engine berbasis layer + genre jazz. Lihat [Rencana](#rencana).
 
@@ -21,7 +22,7 @@ python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pip install --no-deps tinysoundfont
-python -m songgen setup          # unduh soundfont (~32 MB)
+python -m songgen setup          # unduh soundfont + library piano & bass (~90 MB)
 ```
 
 ## Pemakaian
@@ -76,7 +77,8 @@ Atau buat file lagu dulu tanpa render: `python -m songgen new --valence 0.4 --en
 | `melody` | `head+solo`, `head` (tema), `solo` (improvisasi), `fills` |
 | `pad` | `sustain`, `swell` |
 
-Instrumen memakai nomor General MIDI, mis. 0 Grand Piano, 4 Rhodes, 11 Vibraphone,
+Field `lib` memilih library rekaman asli (`salamander_piano`, `upright_bass`); kalau kosong,
+instrumen dimainkan dari SoundFont dengan nomor General MIDI, mis. 0 Grand Piano, 4 Rhodes, 11 Vibraphone,
 26 Jazz Guitar, 32 Acoustic Bass, 56 Trumpet, 59 Muted Trumpet, 65 Alto Sax, 66 Tenor Sax,
 73 Flute, 49 Strings. Drum: `bank 128`, preset 32 Jazz, 40 Brush.
 
@@ -109,6 +111,8 @@ songgen/
     roles/           chords, bass, drums, melody, pad
     mixer.py         render per layer + mix
     render.py        pipeline lengkap
+    sampler.py       pemutar multi-sampel (velocity layer, round robin, release)
+    libraries.py     unduh library instrumen
     sfrender.py, fx.py, ambience.py, video.py
 tests/
 ```
@@ -124,5 +128,8 @@ tests/
 
 ## Lisensi aset
 
-GeneralUser GS oleh S. Christian Collins: bebas dipakai, termasuk untuk musik komersial.
+- **Salamander Grand Piano V3** oleh Alexander Holm: **CC BY 3.0**. Wajib dicantumkan di
+  deskripsi video, mis.: `Piano samples: Salamander Grand Piano V3 by Alexander Holm (CC BY 3.0)`.
+- **VSCO-2 Community Edition** (upright bass) oleh Versilian Studios: CC0.
+- **GeneralUser GS** oleh S. Christian Collins: bebas dipakai, termasuk untuk musik komersial.
 Sampel ambience di `samples/`: public domain/CC0 (lihat `samples/CREDITS.md`).

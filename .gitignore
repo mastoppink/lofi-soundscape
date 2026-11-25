@@ -12,3 +12,5 @@ output/
 *.mp3
 *.mp4
 *.tracklist.txt
+
+instruments/
