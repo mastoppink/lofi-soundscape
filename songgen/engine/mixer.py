@@ -114,11 +114,16 @@ def active_rms(x: np.ndarray, win: int = 4410) -> float:
     return float(np.sqrt((a ** 2).mean())) if len(a) else 0.0
 
 
-def level(role: str, x: np.ndarray) -> np.ndarray:
+# gaya yang memang pelan tidak dinaikkan ke level standar
+STYLE_OFFSET_DB = {"soft": -7.0, "sparse": -5.0, "brush": -4.0, "ballad": -1.0}
+
+
+def level(role: str, x: np.ndarray, style: str = "") -> np.ndarray:
     r = active_rms(x)
     if r <= 0:
         return x
-    g_db = max(-18.0, min(24.0, ROLE_TARGET_DB.get(role, -28.0) - 20 * np.log10(r)))
+    target = ROLE_TARGET_DB.get(role, -28.0) + STYLE_OFFSET_DB.get(style, 0.0)
+    g_db = max(-18.0, min(24.0, target - 20 * np.log10(r)))
     return x * np.float32(10 ** (g_db / 20))
 
 
@@ -129,7 +134,7 @@ def mix(spec: SongSpec, stems: dict[str, np.ndarray], seed: int = 0) -> np.ndarr
     for layer in audible(spec):
         if layer.id not in stems:
             continue
-        x = level(layer.role, stems[layer.id]) * layer.volume
+        x = level(layer.role, stems[layer.id], layer.style) * layer.volume
         p = max(-1.0, min(1.0, layer.pan))
         x = x * np.array([min(1.0, 1 - p), min(1.0, 1 + p)], np.float32)   # balance
         dry[: len(x)] += x

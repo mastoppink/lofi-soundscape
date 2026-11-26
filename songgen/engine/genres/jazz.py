@@ -14,7 +14,7 @@ LABEL = "Jazz"
 STYLES = {
     "chords": ["comping", "ballad", "stabs", "sustain"],
     "bass": ["walking", "two", "pedal"],
-    "drums": ["ride", "brush", "sparse"],
+    "drums": ["ride", "soft", "sparse", "brush"],
     "melody": ["head+solo", "ai", "head", "solo", "fills"],
     "pad": ["sustain", "swell"],
 }
@@ -119,7 +119,7 @@ def default_spec(valence: float = 0.5, energy: float = 0.5, duration: float = 30
         Layer("bass", "bass", Instrument(32, name="Upright Bass", lib="upright_bass"), "two" if ballad else "walking",
               density=0.5, volume=0.95, pan=0.1, reverb=0.1),
         Layer("drums", "drums", Instrument(32, 128, True, "Jazz Kit", lib="jazz_kit"),
-              "sparse" if brush else "ride", density=0.5, volume=0.6, pan=0.15, reverb=0.18),
+              "soft" if brush else "ride", density=0.5, volume=0.6, pan=0.15, reverb=0.18),
         Layer("melody", "melody", piano, "head+solo",
               density=0.45, volume=0.85, pan=-0.15, reverb=0.25, sections=["head", "solo", "ending"]),
         Layer("strings", "pad", Instrument(49, name="Slow Strings"), "swell",

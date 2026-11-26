@@ -4,7 +4,7 @@ from __future__ import annotations
 from ..song import Note
 from . import active, hum, vel
 
-KICK, STICK, SNARE, BR_SLAP, BR_SWIRL, HH_PEDAL, HH_OPEN, CRASH, RIDE, RIDE_BELL = 36, 37, 38, 39, 40, 44, 46, 49, 51, 53
+KICK, STICK, SNARE, BR_SLAP, BR_SWIRL, CLHAT, HH_PEDAL, HH_OPEN, CRASH, RIDE, RIDE_BELL = 36, 37, 38, 39, 40, 42, 44, 46, 49, 51, 53
 BR_TAP = 38
 
 
@@ -22,7 +22,7 @@ def generate(arr, layer, rng):
             continue
         it = sec.intensity
         last_sec = sec is arr.sections[-1]
-        if sec.kind != "intro" and sec.label in ("A", "B", "E") and sec.start_bar > 0 and style != "sparse":
+        if sec.kind != "intro" and sec.label in ("A", "B", "E") and sec.start_bar > 0 and style not in ("sparse", "soft"):
             prev_sec = arr.section_at_bar(sec.start_bar - 1)
             if prev_sec.kind != sec.kind or sec.label == "B":
                 hit(sec.start_bar * bpb, CRASH, 55 + 30 * it, 2.0)
@@ -31,14 +31,28 @@ def generate(arr, layer, rng):
             b0 = bar * bpb
             if last_sec and bar >= sec.end_bar - 2:
                 if bar == sec.end_bar - 2:          # pukulan penutup
-                    hit(b0, CRASH, 70, 4.0)
-                    hit(b0, KICK, 75)
+                    hit(b0, CRASH, 45 if style == "soft" else 70, 4.0)
+                    hit(b0, KICK, 50 if style == "soft" else 75)
                     if style == "brush":
                         hit(b0, BR_SWIRL, 50, 4 * bs)
                 continue
             phrase_end = (bar - sec.start_bar) == sec.bars - 1
             fill = phrase_end and rng.random() < 0.35 + 0.4 * layer.density * it
-            if style == "ride" or style == "sparse":
+            if style == "soft":
+                # ballad tenang: hi-hat lembut, cross-stick di ketukan 4, kick halus; tanpa ride terus-menerus
+                for b in range(bpb):
+                    hit(b0 + b, CLHAT, 22 + 14 * it + (6 if b % 2 else 0), 0.3)
+                    if b % 2 == 1:
+                        hit(b0 + b, HH_PEDAL, 30 + 10 * it)
+                    if rng.random() < 0.2 * layer.density:
+                        hit(b0 + b + 0.5, CLHAT, 16 + 10 * it, 0.2)
+                if rng.random() < 0.8:
+                    hit(b0 + 3, STICK, 30 + 20 * it)
+                if rng.random() < 0.5:
+                    hit(b0, KICK, 22 + 12 * it)
+                if (bar - sec.start_bar) % 8 == 0 and bar > 0 and rng.random() < 0.5:
+                    hit(b0, RIDE, 30 + 10 * it, 1.5)   # sesekali, sangat pelan
+            elif style == "ride" or style == "sparse":
                 for b in range(bpb):
                     hit(b0 + b, RIDE, 55 + 25 * it + (8 if b % 2 else 0), 1.0)
                     if b % 2 == 1 and style == "ride" and rng.random() < 0.9:
