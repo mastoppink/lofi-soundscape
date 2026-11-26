@@ -138,3 +138,14 @@ def test_ai_tidy_monophonic_and_snapped():
     for a, b in zip(out, out[1:]):
         assert a.start + a.dur <= b.start                  # tidak bertumpuk
     assert abs(out[1].start - bs) < abs(bs * 1.03 - bs)    # ditarik ke grid
+
+
+def test_midi_export(tmp_path):
+    import mido
+    out = tmp_path / "x.mid"
+    main(["midi", "--valence", "0.3", "--energy", "0.3", "--seed", "4", "--duration", "2m", "-o", str(out), "--no-drums"])
+    m = mido.MidiFile(str(out))
+    names = [t.name for t in m.tracks]
+    assert any(n.startswith("bass") for n in names) and not any(n.startswith("drums") for n in names)
+    assert 100 < m.length < 300
+    assert out.with_suffix(".txt").read_text().count("bar") > 3

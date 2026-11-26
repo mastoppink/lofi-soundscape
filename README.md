@@ -46,6 +46,15 @@ python -m songgen render lagu.json --solo bass,drums --preview 30s   # dengar se
 python -m songgen render lagu.json --mute strings --stems stems/     # simpan audio per layer
 ```
 
+### Ekspor MIDI (untuk GarageBand / Logic)
+
+```bash
+python -m songgen midi --valence 0.3 --energy 0.3 -o lagu.mid             # semua layer
+python -m songgen midi lagu.json --no-drums -o lagu.mid                    # tanpa drum (pakai Drummer GarageBand)
+```
+
+Satu track per layer, tempo & penanda bagian lagu ikut tersimpan; `lagu.txt` berisi struktur dan akor.
+
 ### Melodi ditulis AI (opsional)
 
 Melodi bisa ditulis oleh **Anticipatory Music Transformer** (Stanford CRFM, Apache-2.0). Model ini

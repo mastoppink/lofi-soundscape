@@ -3,5 +3,6 @@ scipy>=1.11
 soundfile>=0.12
 pedalboard>=0.9
 soxr>=0.3
+mido>=1.3
 # tinysoundfont diinstal terpisah dengan --no-deps (lihat README),
 # karena dependensi pyaudio-nya hanya untuk playback live dan tidak kita pakai.

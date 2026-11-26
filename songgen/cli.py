@@ -107,6 +107,22 @@ def cmd_render(a):
         print(f"Spesifikasi: {out.with_suffix('.json')} (pakai lagi untuk render ulang/ubah layer)")
 
 
+def cmd_midi(a):
+    from .engine.midi import export
+    from .engine.mixer import compose
+    from .engine.render import arrange, title_for
+    spec = _spec_from_args(a)
+    arr = arrange(spec)
+    notes = compose(spec, arr, log=lambda *x: None)
+    out = Path(a.out or f"{spec.genre}_{spec.seed}.mid")
+    export(spec, arr, notes, out, include_drums=not a.no_drums)
+    if not a.spec:
+        spec.save(out.with_suffix(".json"))
+    sheet = out.with_suffix(".txt")
+    sheet.write_text(f"{title_for(spec)}\n{arr.describe()}\n")
+    print(f"MIDI: {out}\nLembar akor & struktur: {sheet}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="songgen", description="Generator lagu instrumental berbasis layer")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -151,6 +167,12 @@ def main(argv=None):
     p.add_argument("--stems", help="folder untuk menyimpan audio per layer")
     p.add_argument("--soundfont", default=str(DEFAULT_SF))
     p.set_defaults(fn=cmd_render)
+
+    p = sub.add_parser("midi", help="ekspor MIDI (satu track per layer) untuk GarageBand/DAW")
+    common(p)
+    p.add_argument("-o", "--out")
+    p.add_argument("--no-drums", action="store_true", help="tanpa track drum (pakai Drummer GarageBand)")
+    p.set_defaults(fn=cmd_midi)
 
     a = ap.parse_args(argv)
     a.fn(a)
