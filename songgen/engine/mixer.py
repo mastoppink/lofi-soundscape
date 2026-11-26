@@ -48,8 +48,38 @@ def compose(spec: SongSpec, arr: Arrangement, log=print) -> dict[str, list[Note]
         if layer.style != "ai":
             for n in notes:
                 n.start = max(0.0, n.start + off)
+        if _is_piano(layer):
+            notes = apply_pedal(arr, notes, layer.role)
         out[layer.id] = notes
     return out
+
+
+def _is_piano(layer) -> bool:
+    ins = layer.instrument
+    return not ins.drums and (ins.lib == "salamander_piano" or (not ins.lib and ins.preset <= 7))
+
+
+def apply_pedal(arr, notes, role) -> list[Note]:
+    """Pedal sustain: nada iringan ditahan sampai akor berganti; melodi dimainkan legato."""
+    notes = sorted(notes, key=lambda n: n.start)
+    bs = arr.beat_sec
+    if role in ("chords", "pad"):
+        last_by_key = {}
+        for n in notes:
+            c = arr.chord_at(n.start / bs + 0.05)
+            end = arr.time(c.end, False) + 0.04          # pedal diangkat tepat saat akor berganti
+            n.dur = max(n.dur, end - n.start)
+            prev = last_by_key.get(n.key)
+            if prev is not None and prev.start + prev.dur > n.start:
+                prev.dur = max(0.05, n.start - prev.start - 0.01)   # nada sama dipukul ulang
+            last_by_key[n.key] = n
+    elif role == "melody":
+        for a, b in zip(notes, notes[1:]):
+            gap = b.start - a.start
+            if gap < 1.5 * bs:
+                c = arr.chord_at(a.start / bs + 0.05)
+                a.dur = max(a.dur, min(gap + 0.04, arr.time(c.end, False) + 0.04 - a.start))
+    return notes
 
 
 GM_PROGRAM = {"chords": 0, "bass": 32, "pad": 48}
@@ -144,7 +174,7 @@ def mix(spec: SongSpec, stems: dict[str, np.ndarray], seed: int = 0) -> np.ndarr
     wet = room(send.T, SR, reset=True).T
     out = dry + wet * 0.7
     rng = np.random.default_rng(seed)
-    out = master(out, spec.lofi, rng)
+    out = master(out, spec.lofi, rng, spec.warmth)
     if spec.lofi > 0:
         out += Vinyl(seed)(len(out), spec.lofi * 0.8)
     # normalisasi kasar ke ~ -16 dBFS RMS lalu limiter (puncak -1 dB)

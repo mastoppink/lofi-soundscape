@@ -57,7 +57,10 @@ def _jazz_kit(dest: Path, log):
     log(f"  jazz kit ({len(JAZZ_KIT_FILES)} file) ...")
     for f in JAZZ_KIT_FILES:
         (dest / Path(f).name).write_bytes(_get(base + urllib.parse.quote(f)))
-    return {"name": "Jazz Kit (VCSL)", "map": JAZZ_KIT_MAP, "release": 0.4, "max_len": 5, "vel_curve": 0.8,
+    from .brushes import make
+    kit_map = dict(JAZZ_KIT_MAP)
+    kit_map.update(make(dest))      # brush (sapuan & tepukan) disintesis
+    return {"name": "Jazz Kit (VCSL)", "map": kit_map, "release": 0.4, "max_len": 5, "vel_curve": 0.8,
             "credit": "Versilian Community Sample Library (VCSL) by Versilian Studios (CC0)"}
 
 

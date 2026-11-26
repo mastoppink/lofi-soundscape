@@ -223,7 +223,7 @@ def generate(arr, layer, rng):
                                                     peak_shift=0.15 if sec.label == "B" else 0)
             phrase, base = themes[sec.label], 64
         elif style in ("solo", "head+solo") and sec.kind in ("solo", "climax"):
-            dens = min(1.0, layer.density + 0.25 + 0.2 * sec.intensity)
+            dens = min(1.0, layer.density + 0.05 + 0.35 * arr.energy + 0.1 * sec.intensity)
             phrase, base = _section_melody(arr, sec, rng, lo, hi, dens, peak_shift=0.1 * sec.intensity), 66
         elif style == "fills":
             phrase = [(p, l, n, s) for p, l, n, s in _section_melody(arr, sec, rng, lo, hi, 0.3)

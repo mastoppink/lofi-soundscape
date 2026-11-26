@@ -92,11 +92,12 @@ class Vinyl:
         return np.stack([mono, np.roll(mono, 7)], axis=1).astype(np.float32)
 
 
-def master(x: np.ndarray, lofi: float, rng: np.random.Generator) -> np.ndarray:
+def master(x: np.ndarray, lofi: float, rng: np.random.Generator, warmth: float = 0.0) -> np.ndarray:
     if lofi > 0:
         x = wow_flutter(x, 0.3 + lofi, rng)
-        x = saturate(x, 0.1 + 0.4 * lofi)
-    b = Pedalboard([HighpassFilter(28), LowpassFilter(19000 - 10000 * lofi),
+    if lofi > 0 or warmth > 0:
+        x = saturate(x, 0.1 * warmth + 0.4 * lofi)
+    b = Pedalboard([HighpassFilter(28), LowpassFilter(min(19000 - 10000 * lofi, 19000 - 11000 * warmth)),
                     Compressor(threshold_db=-16, ratio=1.8, attack_ms=30, release_ms=250)])
     return _pb(b, x)
 

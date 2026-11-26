@@ -91,7 +91,14 @@ def arrange(spec: SongSpec) -> Arrangement:
         add_phrase(arr, bar, phrase)
         bar += len(phrase)
 
-    sec("intro", "I", parse_phrase(INTRO[mode]), 0.3 + 0.2 * e)
+    # energy rendah = dinamika stabil (tidak ada bagian yang tiba-tiba keras)
+    spread = 0.25 + 0.75 * e
+    base_i = 0.35 + 0.3 * e
+
+    def flat(x):
+        return base_i + (x - base_i) * spread
+
+    sec("intro", "I", parse_phrase(INTRO[mode]), flat(0.3 + 0.2 * e))
     total_choruses = solos + 2
     for ch in range(total_choruses):
         kind = "head" if ch in (0, total_choruses - 1) else "solo"
@@ -102,8 +109,8 @@ def arrange(spec: SongSpec) -> Arrangement:
         else:
             inten = 0.45 + 0.3 * e
         for lbl, ph in (("A", A), ("A", A), ("B", B), ("A", A)):
-            sec(kind, lbl, ph, inten + (0.05 if lbl == "B" else 0), ch)
-    sec("ending", "E", parse_phrase(ENDING[mode]), 0.35 + 0.2 * e)
+            sec(kind, lbl, ph, flat(inten + (0.05 if lbl == "B" else 0)), ch)
+    sec("ending", "E", parse_phrase(ENDING[mode]), flat(0.35 + 0.2 * e))
     return arr
 
 
@@ -119,10 +126,11 @@ def default_spec(valence: float = 0.5, energy: float = 0.5, duration: float = 30
         Layer("bass", "bass", Instrument(32, name="Upright Bass", lib="upright_bass"), "two" if ballad else "walking",
               density=0.5, volume=0.95, pan=0.1, reverb=0.1),
         Layer("drums", "drums", Instrument(32, 128, True, "Jazz Kit", lib="jazz_kit"),
-              "soft" if brush else "ride", density=0.5, volume=0.6, pan=0.15, reverb=0.18),
+              "brush" if brush else "ride", density=0.5, volume=0.6, pan=0.15, reverb=0.18),
         Layer("melody", "melody", piano, "head+solo",
               density=0.45, volume=0.85, pan=-0.15, reverb=0.25, sections=["head", "solo", "ending"]),
         Layer("strings", "pad", Instrument(49, name="Slow Strings"), "swell",
               density=0.3, volume=0.3, pan=0.0, reverb=0.5, enabled=False, sections=["head", "ending"]),
     ]
-    return SongSpec(genre=NAME, valence=valence, energy=energy, duration=duration, seed=seed, layers=layers)
+    return SongSpec(genre=NAME, valence=valence, energy=energy, duration=duration, seed=seed, layers=layers,
+                    room=0.3 + 0.3 * energy, warmth=0.6 - 0.3 * energy)

@@ -22,7 +22,7 @@ def generate(arr, layer, rng):
             continue
         it = sec.intensity
         last_sec = sec is arr.sections[-1]
-        if sec.kind != "intro" and sec.label in ("A", "B", "E") and sec.start_bar > 0 and style not in ("sparse", "soft"):
+        if sec.kind != "intro" and sec.label in ("A", "B", "E") and sec.start_bar > 0 and style not in ("sparse", "soft", "brush"):
             prev_sec = arr.section_at_bar(sec.start_bar - 1)
             if prev_sec.kind != sec.kind or sec.label == "B":
                 hit(sec.start_bar * bpb, CRASH, 55 + 30 * it, 2.0)
@@ -31,7 +31,7 @@ def generate(arr, layer, rng):
             b0 = bar * bpb
             if last_sec and bar >= sec.end_bar - 2:
                 if bar == sec.end_bar - 2:          # pukulan penutup
-                    hit(b0, CRASH, 45 if style == "soft" else 70, 4.0)
+                    hit(b0, CRASH, 45 if style in ("soft", "brush") else 70, 4.0)
                     hit(b0, KICK, 50 if style == "soft" else 75)
                     if style == "brush":
                         hit(b0, BR_SWIRL, 50, 4 * bs)
@@ -71,17 +71,23 @@ def generate(arr, layer, rng):
                         else:
                             hit(b0 + pos, KICK, 45 + 30 * it)
             elif style == "brush":
-                hit(b0, BR_SWIRL, 30 + 20 * it, 2 * bs, 0.004)
-                hit(b0 + 2, BR_SWIRL, 30 + 20 * it, 2 * bs, 0.004)
+                # brush ala trio kedai kopi: sapuan melingkar tiap ketukan, tepukan di 2 & 4,
+                # hi-hat kaki di 2 & 4, kick nyaris tak terdengar
                 for b in range(bpb):
-                    hit(b0 + b, BR_TAP, 40 + 25 * it + (12 if b % 2 else 0))
+                    hit(b0 + b, BR_SWIRL, 34 + 14 * it + (6 if b % 2 == 0 else 0) + rng.uniform(-4, 4), 0.6, 0.01)
                     if b % 2 == 1:
-                        hit(b0 + b, BR_SLAP, 30 + 30 * it)
-                        hit(b0 + b, HH_PEDAL, 45 + 10 * it)
-                    if rng.random() < 0.5 + 0.4 * layer.density:
-                        hit(b0 + b + 0.5, BR_TAP, 28 + 18 * it)
-                    if rng.random() < 0.35:
-                        hit(b0 + b, KICK, 25 + 15 * it)
+                        hit(b0 + b, BR_SLAP, 40 + 18 * it)
+                        hit(b0 + b, HH_PEDAL, 26 + 8 * it)
+                    elif rng.random() < 0.25 + 0.3 * layer.density:
+                        hit(b0 + b + 0.5 + (0 if rng.random() < 0.7 else 0.5), BR_SLAP, 18 + 10 * it)  # ghost
+                if rng.random() < 0.35:
+                    hit(b0, KICK, 18 + 8 * it)
+            if fill and style in ("brush", "soft"):
+                fill = rng.random() < 0.3          # isian sangat jarang & lembut
+            if fill and style in ("brush", "soft"):
+                for f in (3.0, 3.5):
+                    hit(b0 + f, BR_SLAP, 30 + 12 * it)
+                fill = False
             if fill:
                 start = 2 if rng.random() < 0.6 else 3
                 pos = start
