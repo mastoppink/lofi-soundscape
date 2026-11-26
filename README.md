@@ -157,5 +157,7 @@ tests/
 - **Salamander Grand Piano V3** oleh Alexander Holm: **CC BY 3.0**. Wajib dicantumkan di
   deskripsi video, mis.: `Piano samples: Salamander Grand Piano V3 by Alexander Holm (CC BY 3.0)`.
 - **VSCO-2 CE** (upright bass) dan **VCSL** (drum) oleh Versilian Studios: CC0.
+- **Brush kit**: rekaman Freesound CC0 (#843460 "Brushes on Drum Kit Sample Set" oleh Srirachasocks,
+  #556129 brush swirl), dipotong otomatis oleh `setup`.
 - **GeneralUser GS** oleh S. Christian Collins: bebas dipakai, termasuk untuk musik komersial.
 Sampel ambience di `samples/`: public domain/CC0 (lihat `samples/CREDITS.md`).

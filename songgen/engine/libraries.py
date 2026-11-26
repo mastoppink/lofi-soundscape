@@ -57,14 +57,26 @@ def _jazz_kit(dest: Path, log):
     log(f"  jazz kit ({len(JAZZ_KIT_FILES)} file) ...")
     for f in JAZZ_KIT_FILES:
         (dest / Path(f).name).write_bytes(_get(base + urllib.parse.quote(f)))
-    from .brushes import make
-    kit_map = dict(JAZZ_KIT_MAP)
-    kit_map.update(make(dest))      # brush (sapuan & tepukan) disintesis
-    return {"name": "Jazz Kit (VCSL)", "map": kit_map, "release": 0.4, "max_len": 5, "vel_curve": 0.8,
+    return {"name": "Jazz Kit (VCSL)", "map": JAZZ_KIT_MAP, "release": 0.4, "max_len": 5, "vel_curve": 0.8,
             "credit": "Versilian Community Sample Library (VCSL) by Versilian Studios (CC0)"}
 
 
-LIBRARIES = {"salamander_piano": _salamander, "upright_bass": _upright, "jazz_kit": _jazz_kit}
+def _brush_kit(dest: Path, log):
+    # brush asli dari Freesound (CC0) + hi-hat/ride VCSL
+    from .brushes import build
+    log("  brush kit (rekaman Freesound CC0, dipotong otomatis) ...")
+    kit_map = build(dest)
+    base = "https://raw.githubusercontent.com/sgossner/VCSL/master/"
+    for key in ("42", "44", "46", "51", "53", "49"):
+        kit_map[key] = JAZZ_KIT_MAP[key]
+        for f, _, _ in JAZZ_KIT_MAP[key]:
+            src = next(x for x in JAZZ_KIT_FILES if x.endswith("/" + f))
+            (dest / f).write_bytes(_get(base + urllib.parse.quote(src)))
+    return {"name": "Brush Kit (Freesound + VCSL)", "map": kit_map, "release": 0.3, "max_len": 3, "vel_curve": 0.7,
+            "credit": "Freesound CC0 #843460 & #556129 (Srirachasocks, MuseScore brush kit); VCSL by Versilian Studios (CC0)"}
+
+
+LIBRARIES = {"salamander_piano": _salamander, "upright_bass": _upright, "jazz_kit": _jazz_kit, "brush_kit": _brush_kit}
 
 
 def install(names=None, root: Path = LIB_DIR_DEFAULT, log=print):
